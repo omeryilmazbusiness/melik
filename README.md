@@ -128,3 +128,7 @@ melik/
 ## Lisans
 
 Private — Şirin Kids © 2026
+
+## Deploy
+
+Railway adımları için bkz. [RAILWAY.md](./RAILWAY.md)

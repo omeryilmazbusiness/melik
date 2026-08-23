@@ -1,8 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 import categoriesRouter from './routes/categories.js';
@@ -12,19 +10,32 @@ import bannersRouter from './routes/banners.js';
 import campaignsRouter from './routes/campaigns.js';
 import promoTilesRouter from './routes/promoTiles.js';
 import adminRouter from './routes/admin/index.js';
+import { getUploadDir } from './utils/uploads.js';
 
 dotenv.config();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000' }));
 
-// JSON parser — multipart upload route'ları hariç
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || corsOrigins.includes('*') || corsOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+}));
+
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/admin/upload')) {
     return next();
@@ -32,7 +43,7 @@ app.use((req, res, next) => {
   express.json({ limit: '10mb' })(req, res, next);
 });
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(getUploadDir()));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -58,8 +69,9 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Melik API running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Şirin Kids API running on 0.0.0.0:${PORT}`);
+  console.log(`Uploads dir: ${getUploadDir()}`);
 });
 
 export default app;
