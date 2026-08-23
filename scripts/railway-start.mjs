@@ -4,15 +4,11 @@
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
-import dotenv from 'dotenv';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const frontendDir = path.join(rootDir, 'frontend');
 const backendDir = path.join(rootDir, 'backend');
-
-dotenv.config({ path: path.join(backendDir, '.env') });
-dotenv.config();
 
 if (!process.env.API_BASE_URL && process.env.RAILWAY_PUBLIC_DOMAIN) {
   process.env.API_BASE_URL = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
