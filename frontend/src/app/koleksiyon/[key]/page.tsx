@@ -13,6 +13,8 @@ const SECTION_META: Record<string, { title: string; campaignSlug: string }> = {
   tek_fiyat: { title: 'Tek Fiyat', campaignSlug: 'tek-fiyat' },
 };
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{ key: string }>;
 }

@@ -7,6 +7,8 @@ import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { getCategories, getCampaigns, getProducts } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

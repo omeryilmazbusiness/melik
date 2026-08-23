@@ -10,6 +10,8 @@ import RelatedProducts from '@/components/product/RelatedProducts';
 import { getCategories, getProduct, getRelatedProducts } from '@/lib/api';
 import type { Product } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

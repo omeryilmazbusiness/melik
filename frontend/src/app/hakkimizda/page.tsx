@@ -2,19 +2,16 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Logo } from '@/components/Logo';
-import { getCategories } from '@/lib/api';
 
 export const metadata = {
   title: 'Hakkımızda | Şirin Kids',
   description: 'Şirin Kids - Çocuklarınız için kaliteli, şık ve konforlu giyim.',
 };
 
-export default async function AboutPage() {
-  const { data: categories } = await getCategories();
-
+export default function AboutPage() {
   return (
     <>
-      <Header categories={categories} />
+      <Header categories={[]} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="text-center mb-10">

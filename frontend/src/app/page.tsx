@@ -14,7 +14,7 @@ import {
   getProductSections,
 } from '@/lib/api';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 async function getPageData() {
   const [categoriesRes, campaignsRes, bannersRes, promoTilesRes, sectionsRes] =
