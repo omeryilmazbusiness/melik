@@ -131,4 +131,4 @@ Private — Şirin Kids © 2026
 
 ## Deploy
 
-Railway adımları için bkz. [RAILWAY.md](./RAILWAY.md)
+Tek Railway servisi + Postgres: [RAILWAY.md](./RAILWAY.md)
