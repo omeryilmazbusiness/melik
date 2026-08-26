@@ -6,10 +6,11 @@ import { Plus, Upload, Loader2 } from 'lucide-react';
 import {
   adminGetCategories,
   adminGetSections,
+  adminGetBanners,
   adminUploadImage,
   type ProductInput,
 } from '@/lib/admin-api';
-import type { Category, ProductFeature, ProductSize, ColorVariant } from '@/lib/types';
+import type { Category, ProductFeature, ProductSize, ColorVariant, Banner } from '@/lib/types';
 import type { ProductSectionOption } from '@/lib/admin-api';
 
 const DEFAULT_SIZES_BABY: ProductSize[] = [
@@ -49,6 +50,7 @@ interface ProductFormProps {
 export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' }: ProductFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [sections, setSections] = useState<ProductSectionOption[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -62,6 +64,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
     original_price: initial?.original_price ?? null,
     section: initial?.section ?? '',
     category_id: initial?.category_id ?? null,
+    banner_id: initial?.banner_id ?? null,
     image_url: initial?.image_url || '',
     images: initial?.images || [],
     badge: initial?.badge ?? null,
@@ -77,10 +80,13 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
   });
 
   useEffect(() => {
-    Promise.all([adminGetCategories(), adminGetSections()]).then(([catRes, secRes]) => {
-      setCategories(catRes.data);
-      setSections(secRes.data);
-    });
+    Promise.all([adminGetCategories(), adminGetSections(), adminGetBanners()]).then(
+      ([catRes, secRes, banRes]) => {
+        setCategories(catRes.data);
+        setSections(secRes.data);
+        setBanners(banRes.data.filter((b) => b.is_active !== false));
+      }
+    );
   }, []);
 
   const set = <K extends keyof ProductInput>(key: K, value: ProductInput[K]) => {
@@ -144,6 +150,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
       await onSubmit({
         ...form,
         section: form.section || null,
+        banner_id: form.banner_id || null,
         images,
         color_variants: colorVariants,
         detail: form.detail || form.description,
@@ -186,7 +193,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
       </section>
 
       <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900">Kategori & Koleksiyon</h2>
+        <h2 className="font-semibold text-gray-900">Kategori & Kampanya</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">Kategori *</label>
@@ -215,6 +222,22 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
               ))}
             </select>
             <p className="text-[11px] text-gray-400 mt-1">Boş bırakılırsa ana sayfa kampanya bölümlerinde görünmez</p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Banner</label>
+            <select
+              value={form.banner_id ?? ''}
+              onChange={(e) => set('banner_id', e.target.value ? Number(e.target.value) : null)}
+              className={INPUT}
+            >
+              <option value="">Banner yok</option>
+              {banners.map((b) => (
+                <option key={b.id} value={b.id}>{b.title}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Seçilirse müşteri o banner’a tıkladığında bu ürün listelenir
+            </p>
           </div>
         </div>
       </section>

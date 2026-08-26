@@ -25,6 +25,7 @@ export default function HeroBanner({ banners }: HeroBannerProps) {
   if (!active.length) return null;
 
   const banner = active[Math.min(index, active.length - 1)];
+  const href = banner.cta_link || `/banner/${banner.id}`;
 
   const prev = () => setIndex((i) => (i === 0 ? active.length - 1 : i - 1));
   const next = () => setIndex((i) => (i + 1) % active.length);
@@ -42,18 +43,16 @@ export default function HeroBanner({ banners }: HeroBannerProps) {
                 {banner.subtitle}
               </p>
             )}
-            {banner.cta_text && (
-              <Link
-                href={banner.cta_link || '/'}
-                className="inline-flex items-center gap-2 px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-2xl transition-all hover:shadow-lg hover:shadow-orange-200 text-sm sm:text-base"
-              >
-                {banner.cta_text}
-                <ArrowRight size={18} />
-              </Link>
-            )}
+            <Link
+              href={href}
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-2xl transition-all hover:shadow-lg hover:shadow-orange-200 text-sm sm:text-base"
+            >
+              {banner.cta_text || 'Ürünleri Gör'}
+              <ArrowRight size={18} />
+            </Link>
           </div>
 
-          <div className="relative h-52 sm:h-64 md:h-full md:min-h-[320px]">
+          <Link href={href} className="relative h-52 sm:h-64 md:h-full md:min-h-[320px] block">
             <AppImage
               src={banner.image_url}
               alt={banner.title}
@@ -67,7 +66,7 @@ export default function HeroBanner({ banners }: HeroBannerProps) {
                 <span className="text-orange-500 font-bold text-sm">{banner.badge_text}</span>
               </div>
             )}
-          </div>
+          </Link>
         </div>
 
         {active.length > 1 && (

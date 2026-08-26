@@ -4,19 +4,28 @@ import { slugify, computeDiscountPercent, PRODUCT_SECTIONS, parseOptionalSection
 
 const router = Router();
 
+function parseOptionalBannerId(value) {
+  if (value === undefined) return { unset: true, value: undefined };
+  if (value === null || value === '' || value === 0 || value === '0') return { unset: false, value: null };
+  const id = parseInt(value, 10);
+  if (!Number.isFinite(id) || id < 1) return { unset: false, invalid: true, value: null };
+  return { unset: false, value: id };
+}
+
 router.get('/sections', (_req, res) => {
   res.json({ data: PRODUCT_SECTIONS });
 });
 
 router.get('/', async (req, res, next) => {
   try {
-    const { section, category, q, limit = '50', offset = '0' } = req.query;
+    const { section, category, banner, q, limit = '50', offset = '0' } = req.query;
     const conditions = ['p.is_active = TRUE'];
     const params = [];
     let idx = 1;
 
     if (section) { conditions.push(`p.section = $${idx++}`); params.push(section); }
     if (category) { conditions.push(`c.slug = $${idx++}`); params.push(category); }
+    if (banner) { conditions.push(`p.banner_id = $${idx++}`); params.push(parseInt(banner, 10)); }
     if (q) {
       conditions.push(`(p.name ILIKE $${idx} OR p.model ILIKE $${idx})`);
       params.push(`%${q}%`);
@@ -27,9 +36,11 @@ router.get('/', async (req, res, next) => {
     const offsetVal = parseInt(offset, 10) || 0;
 
     const { rows } = await pool.query(
-      `SELECT p.*, c.name as category_name, c.slug as category_slug
+      `SELECT p.*, c.name as category_name, c.slug as category_slug,
+              b.title as banner_title
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
+       LEFT JOIN banners b ON p.banner_id = b.id
        WHERE ${conditions.join(' AND ')}
        ORDER BY p.created_at DESC
        LIMIT $${idx} OFFSET $${idx + 1}`,
@@ -53,8 +64,11 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT p.*, c.name as category_name, c.slug as category_slug
-       FROM products p LEFT JOIN categories c ON p.category_id = c.id
+      `SELECT p.*, c.name as category_name, c.slug as category_slug,
+              b.title as banner_title
+       FROM products p
+       LEFT JOIN categories c ON p.category_id = c.id
+       LEFT JOIN banners b ON p.banner_id = b.id
        WHERE p.id = $1`,
       [req.params.id]
     );
@@ -77,15 +91,20 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'Geçerli bir kampanya seçin veya boş bırakın' });
     }
 
+    const bannerParsed = parseOptionalBannerId(p.banner_id ?? null);
+    if (bannerParsed.invalid) {
+      return res.status(400).json({ error: 'Geçersiz banner' });
+    }
+
     const slug = p.slug?.trim() || slugify(p.name);
     const discountPercent = computeDiscountPercent(Number(p.price), p.original_price ? Number(p.original_price) : null);
 
     const { rows } = await pool.query(
       `INSERT INTO products (
         name, slug, subtitle, description, detail, price, original_price, discount_percent,
-        section, category_id, image_url, images, badge, age_range, color, brand, model,
+        section, category_id, banner_id, image_url, images, badge, age_range, color, brand, model,
         sizes, color_variants, features, in_stock, is_featured
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
       RETURNING *`,
       [
         p.name.trim(),
@@ -98,6 +117,7 @@ router.post('/', async (req, res, next) => {
         discountPercent,
         sectionParsed.value,
         p.category_id || null,
+        bannerParsed.value,
         p.image_url,
         JSON.stringify(p.images || [p.image_url]),
         p.badge || null,
@@ -116,6 +136,7 @@ router.post('/', async (req, res, next) => {
     res.status(201).json({ data: rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Bu slug zaten kullanılıyor' });
+    if (err.code === '23503') return res.status(400).json({ error: 'Seçilen banner bulunamadı' });
     next(err);
   }
 });
@@ -133,6 +154,12 @@ router.put('/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'Geçerli bir kampanya seçin veya boş bırakın' });
     }
 
+    const hasBanner = Object.prototype.hasOwnProperty.call(p, 'banner_id');
+    const bannerParsed = hasBanner ? parseOptionalBannerId(p.banner_id) : { unset: true, value: null };
+    if (bannerParsed.invalid) {
+      return res.status(400).json({ error: 'Geçersiz banner' });
+    }
+
     const { rows } = await pool.query(
       `UPDATE products SET
         name = COALESCE($1, name),
@@ -145,20 +172,21 @@ router.put('/:id', async (req, res, next) => {
         discount_percent = COALESCE($8, discount_percent),
         section = CASE WHEN $9 THEN $10 ELSE section END,
         category_id = COALESCE($11, category_id),
-        image_url = COALESCE($12, image_url),
-        images = COALESCE($13, images),
-        badge = $14,
-        age_range = COALESCE($15, age_range),
-        color = COALESCE($16, color),
-        brand = COALESCE($17, brand),
-        model = $18,
-        sizes = COALESCE($19, sizes),
-        color_variants = COALESCE($20, color_variants),
-        features = COALESCE($21, features),
-        in_stock = COALESCE($22, in_stock),
-        is_featured = COALESCE($23, is_featured),
+        banner_id = CASE WHEN $12 THEN $13 ELSE banner_id END,
+        image_url = COALESCE($14, image_url),
+        images = COALESCE($15, images),
+        badge = $16,
+        age_range = COALESCE($17, age_range),
+        color = COALESCE($18, color),
+        brand = COALESCE($19, brand),
+        model = $20,
+        sizes = COALESCE($21, sizes),
+        color_variants = COALESCE($22, color_variants),
+        features = COALESCE($23, features),
+        in_stock = COALESCE($24, in_stock),
+        is_featured = COALESCE($25, is_featured),
         updated_at = NOW()
-       WHERE id = $24 RETURNING *`,
+       WHERE id = $26 RETURNING *`,
       [
         p.name?.trim(),
         p.slug?.trim() || (p.name ? slugify(p.name) : undefined),
@@ -171,6 +199,8 @@ router.put('/:id', async (req, res, next) => {
         hasSection,
         hasSection ? sectionParsed.value : null,
         p.category_id,
+        hasBanner,
+        hasBanner ? bannerParsed.value : null,
         p.image_url,
         p.images ? JSON.stringify(p.images) : undefined,
         p.badge !== undefined ? p.badge : undefined,
@@ -191,6 +221,7 @@ router.put('/:id', async (req, res, next) => {
     res.json({ data: rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Bu slug zaten kullanılıyor' });
+    if (err.code === '23503') return res.status(400).json({ error: 'Seçilen banner bulunamadı' });
     next(err);
   }
 });

@@ -34,7 +34,7 @@ const emptyForm: BannerInput = {
   title: '',
   subtitle: '',
   cta_text: 'ALIŞVERİŞE BAŞLA',
-  cta_link: '/#section-firsat_urunler',
+  cta_link: '',
   image_url: '',
   badge_text: '',
   sort_order: 0,
@@ -79,7 +79,7 @@ export default function BannersAdminPage() {
       title: banner.title,
       subtitle: banner.subtitle || '',
       cta_text: banner.cta_text || 'ALIŞVERİŞE BAŞLA',
-      cta_link: banner.cta_link || '/',
+      cta_link: banner.cta_link || '',
       image_url: banner.image_url || '',
       badge_text: banner.badge_text || '',
       sort_order: banner.sort_order ?? 0,
@@ -248,8 +248,11 @@ export default function BannersAdminPage() {
                 value={form.cta_link || ''}
                 onChange={(e) => set('cta_link', e.target.value)}
                 className={inputClass}
-                placeholder="/koleksiyon/firsat_urunler"
+                placeholder="Boş bırakılırsa /banner/{id}"
               />
+              <p className="text-[11px] text-gray-400 mt-1">
+                Boş bırakırsanız otomatik olarak bu banner’ın ürün sayfasına gider
+              </p>
             </div>
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">Rozet Metni</label>

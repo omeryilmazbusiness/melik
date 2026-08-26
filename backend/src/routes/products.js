@@ -21,6 +21,11 @@ function buildProductQuery(filters) {
     params.push(filters.category);
   }
 
+  if (filters.banner) {
+    conditions.push(`p.banner_id = $${paramIndex++}`);
+    params.push(parseInt(filters.banner, 10));
+  }
+
   if (filters.minPrice) {
     conditions.push(`p.price >= $${paramIndex++}`);
     params.push(parseFloat(filters.minPrice));
@@ -44,13 +49,13 @@ function buildProductQuery(filters) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const { section, category, q, minPrice, maxPrice, limit = '20', offset = '0', sort = 'created_at' } = req.query;
+    const { section, category, banner, q, minPrice, maxPrice, limit = '20', offset = '0', sort = 'created_at' } = req.query;
 
     if (section && !VALID_SECTIONS.includes(section)) {
       return res.status(400).json({ error: 'Invalid section. Must be one of: yeni_sezon, firsat_urunler, tek_fiyat' });
     }
 
-    const { whereClause, params, paramIndex } = buildProductQuery({ section, category, q, minPrice, maxPrice });
+    const { whereClause, params, paramIndex } = buildProductQuery({ section, category, banner, q, minPrice, maxPrice });
 
     const sortMap = {
       price_asc: 'p.price ASC',
@@ -97,6 +102,27 @@ router.get('/', async (req, res, next) => {
         offset: offsetVal,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/latest', async (req, res, next) => {
+  try {
+    const limitVal = Math.min(parseInt(String(req.query.limit), 10) || 12, 40);
+    const { rows } = await pool.query(
+      `SELECT
+        p.id, p.name, p.slug, p.price, p.original_price, p.discount_percent,
+        p.section, p.banner_id, p.image_url, p.images, p.rating, p.review_count, p.badge,
+        p.age_range, p.color, p.created_at, c.name as category_name, c.slug as category_slug
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.in_stock = TRUE AND p.is_active = TRUE
+      ORDER BY p.created_at DESC
+      LIMIT $1`,
+      [limitVal]
+    );
+    res.json({ data: rows.map(normalizeProductRow) });
   } catch (err) {
     next(err);
   }

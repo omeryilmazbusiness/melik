@@ -23,6 +23,7 @@ export default function EditProductPage() {
         original_price: p.original_price ? Number(p.original_price) : null,
         section: p.section,
         category_id: (p as { category_id?: number }).category_id,
+        banner_id: p.banner_id ?? null,
         image_url: p.image_url,
         images: Array.isArray(p.images) ? p.images : [],
         badge: p.badge,

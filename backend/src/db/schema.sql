@@ -52,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_products_section ON products(section);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_name_trgm ON products USING gin (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
 
 -- Uploaded images (banner/product) — survives container redeploys
 CREATE TABLE IF NOT EXISTS uploaded_files (

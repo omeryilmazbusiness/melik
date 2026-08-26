@@ -25,6 +25,7 @@ export interface ProductInput {
   original_price?: number | null;
   section: string | null;
   category_id?: number | null;
+  banner_id?: number | null;
   image_url: string;
   images?: string[];
   badge?: string | null;

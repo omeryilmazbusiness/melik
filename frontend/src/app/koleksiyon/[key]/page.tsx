@@ -5,9 +5,10 @@ import CategoryNav from '@/components/CategoryNav';
 import CampaignNav from '@/components/CampaignNav';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
-import { getCategories, getCampaigns, getProducts } from '@/lib/api';
+import { getCategories, getCampaigns, getProducts, getLatestProducts } from '@/lib/api';
 
-const SECTION_META: Record<string, { title: string; campaignSlug: string }> = {
+const SECTION_META: Record<string, { title: string; campaignSlug?: string }> = {
+  'en-yeni': { title: 'En Yeni' },
   yeni_sezon: { title: 'Yeni Sezon', campaignSlug: 'yeni-sezon' },
   firsat_urunler: { title: 'Fırsat Ürünler', campaignSlug: 'kampanyalar' },
   tek_fiyat: { title: 'Tek Fiyat', campaignSlug: 'tek-fiyat' },
@@ -40,7 +41,9 @@ export default async function CollectionPage({ params }: PageProps) {
     const [categoriesRes, campaignsRes, productsRes] = await Promise.all([
       getCategories(),
       getCampaigns(),
-      getProducts({ section: key, limit: '100', sort: 'created_at' }),
+      key === 'en-yeni'
+        ? getLatestProducts(100)
+        : getProducts({ section: key, limit: '100', sort: 'created_at' }),
     ]);
     categories = categoriesRes.data;
     campaigns = campaignsRes.data;

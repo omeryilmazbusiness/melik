@@ -4,7 +4,6 @@ import CampaignNav from '@/components/CampaignNav';
 import HeroBanner from '@/components/HeroBanner';
 import PromoCarousel from '@/components/PromoCarousel';
 import ProductSection from '@/components/ProductSection';
-import CountdownBanner from '@/components/CountdownBanner';
 import Footer from '@/components/Footer';
 import {
   getCategories,
@@ -12,18 +11,20 @@ import {
   getBanners,
   getPromoTiles,
   getProductSections,
+  getLatestProducts,
 } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
 async function getPageData() {
-  const [categoriesRes, campaignsRes, bannersRes, promoTilesRes, sectionsRes] =
+  const [categoriesRes, campaignsRes, bannersRes, promoTilesRes, sectionsRes, latestRes] =
     await Promise.all([
       getCategories(),
       getCampaigns(),
       getBanners(),
       getPromoTiles(),
       getProductSections(),
+      getLatestProducts(12),
     ]);
 
   return {
@@ -31,7 +32,8 @@ async function getPageData() {
     campaigns: campaignsRes.data,
     banners: bannersRes.data,
     promoTiles: promoTilesRes.data,
-    sections: sectionsRes.data,
+    sections: sectionsRes.data.filter((s) => s.products?.length > 0),
+    latest: latestRes.data,
   };
 }
 
@@ -55,11 +57,7 @@ export default async function HomePage() {
     );
   }
 
-  const { categories, campaigns, banners, promoTiles, sections } = data;
-
-  const yeniSezon = sections.find((s) => s.key === 'yeni_sezon');
-  const firsatUrunler = sections.find((s) => s.key === 'firsat_urunler');
-  const tekFiyat = sections.find((s) => s.key === 'tek_fiyat');
+  const { categories, campaigns, banners, promoTiles, sections, latest } = data;
 
   return (
     <>
@@ -71,35 +69,26 @@ export default async function HomePage() {
         <HeroBanner banners={banners} />
         <PromoCarousel tiles={promoTiles} />
 
-        {yeniSezon && (
+        {latest.length > 0 && (
           <ProductSection
-            title="1 Alana 1 Bedava"
-            subtitle={yeniSezon.subtitle}
-            products={yeniSezon.products}
-            sectionKey="yeni_sezon"
+            title="En Yeni"
+            subtitle="Son eklenen ürünler"
+            products={latest}
+            sectionKey="en-yeni"
+            seeAllHref="/koleksiyon/en-yeni"
           />
         )}
 
-        <CountdownBanner />
-
-        {tekFiyat && (
+        {sections.map((section) => (
           <ProductSection
-            title={tekFiyat.title}
-            subtitle={tekFiyat.subtitle}
-            products={tekFiyat.products}
-            sectionKey="tek_fiyat"
+            key={section.key}
+            title={section.title}
+            subtitle={section.subtitle}
+            products={section.products}
+            sectionKey={section.key}
+            seeAllHref={`/koleksiyon/${section.key}`}
           />
-        )}
-
-        {firsatUrunler && (
-          <ProductSection
-            title={firsatUrunler.title}
-            subtitle={firsatUrunler.subtitle}
-            products={firsatUrunler.products}
-            sectionKey="firsat_urunler"
-            showPromoCard
-          />
-        )}
+        ))}
       </main>
 
       <Footer />

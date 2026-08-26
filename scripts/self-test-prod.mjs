@@ -39,6 +39,7 @@ try {
   // Ensure schema columns/tables exist
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
   await pool.query(`ALTER TABLE products ALTER COLUMN section DROP NOT NULL`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS banner_id INT REFERENCES banners(id) ON DELETE SET NULL`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS uploaded_files (
       filename VARCHAR(255) PRIMARY KEY,
@@ -251,6 +252,55 @@ try {
     adminProductId,
   ]);
   console.log('✓ Optional campaign: boş = yok, seçilirse sections’ta');
+
+  // Banner → ürün atama
+  const { rows: banners } = await pool.query(
+    `SELECT id FROM banners WHERE is_active = TRUE ORDER BY id LIMIT 1`
+  );
+  let bannerId = banners[0]?.id;
+  if (!bannerId) {
+    const { rows: createdBanner } = await pool.query(
+      `INSERT INTO banners (title, subtitle, cta_text, cta_link, image_url, is_active)
+       VALUES ('Selftest Banner', 'Test', 'Ürünleri Gör', NULL, 'https://picsum.photos/seed/banner-self/800/400', TRUE)
+       RETURNING id`
+    );
+    bannerId = createdBanner[0].id;
+    await pool.query(`UPDATE banners SET cta_link = $1 WHERE id = $2`, [`/banner/${bannerId}`, bannerId]);
+  }
+
+  const latest = await json(`${base}/api/products/latest?limit=5`);
+  assert(latest.status === 200, `latest status ${latest.status}`);
+  assert(Array.isArray(latest.body.data), 'latest data array olmalı');
+  if (latest.body.data.length > 1) {
+    const times = latest.body.data.map((p) => new Date(p.created_at).getTime());
+    assert(times[0] >= times[1], 'En Yeni: created_at DESC olmalı');
+  }
+  console.log('✓ En Yeni (latest) endpoint');
+
+  const { rows: catRows2 } = await pool.query(`SELECT id FROM categories ORDER BY id LIMIT 1`);
+  const bannerSlug = `selftest-banner-urun-${Date.now()}`;
+  const { rows: bannerProd } = await pool.query(
+    `INSERT INTO products (name, slug, price, section, banner_id, category_id, image_url, is_active, in_stock)
+     VALUES ($1, $2, 250, NULL, $3, $4, 'https://picsum.photos/seed/bp/100/100', TRUE, TRUE)
+     RETURNING id`,
+    [`Banner Ürün ${Date.now()}`, bannerSlug, bannerId, catRows2[0].id]
+  );
+
+  const bp = await json(`${base}/api/banners/${bannerId}/products`);
+  assert(bp.status === 200, `banner products status ${bp.status}`);
+  assert(
+    bp.body.data.products.some((p) => p.id === bannerProd[0].id),
+    'Banner’a atanan ürün listede olmalı'
+  );
+
+  const homeSections = await json(`${base}/api/products/sections`);
+  assert(
+    !JSON.stringify(homeSections.body).includes('1 Alana 1 Bedava'),
+    'API’de 1 Alana 1 Bedava olmamalı'
+  );
+
+  await pool.query(`UPDATE products SET is_active = FALSE WHERE id = $1`, [bannerProd[0].id]);
+  console.log('✓ Banner ürün atama + listeleme');
 
   console.log('\nAll self-tests passed.');
 } catch (err) {

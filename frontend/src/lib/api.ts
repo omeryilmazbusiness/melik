@@ -71,6 +71,23 @@ export async function getProductSections() {
   return fetchApiServer<{ data: import('./types').ProductSection[] }>('/products/sections');
 }
 
+export async function getLatestProducts(limit = 12) {
+  return fetchApiServer<{ data: import('./types').Product[] }>(`/products/latest?limit=${limit}`);
+}
+
+export async function getBanner(id: string | number) {
+  return fetchApiServer<{ data: import('./types').Banner }>(`/banners/${id}`);
+}
+
+export async function getBannerProducts(id: string | number) {
+  return fetchApiServer<{
+    data: {
+      banner: import('./types').Banner;
+      products: import('./types').Product[];
+    };
+  }>(`/banners/${id}/products`);
+}
+
 export async function getBanners() {
   return fetchApiServer<{ data: import('./types').Banner[] }>('/banners');
 }

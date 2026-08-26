@@ -38,7 +38,7 @@ router.post('/', async (req, res, next) => {
         title.trim(),
         subtitle || null,
         cta_text || 'ALIŞVERİŞE BAŞLA',
-        cta_link || '/',
+        cta_link || null,
         image_url.trim(),
         badge_text || null,
         sort_order ?? 0,
@@ -46,7 +46,18 @@ router.post('/', async (req, res, next) => {
       ]
     );
 
-    res.status(201).json({ data: rows[0] });
+    // Default CTA → banner ürün listesi
+    const created = rows[0];
+    const link = created.cta_link || `/banner/${created.id}`;
+    if (!created.cta_link) {
+      const { rows: updated } = await pool.query(
+        `UPDATE banners SET cta_link = $1 WHERE id = $2 RETURNING *`,
+        [link, created.id]
+      );
+      return res.status(201).json({ data: updated[0] });
+    }
+
+    res.status(201).json({ data: created });
   } catch (err) {
     next(err);
   }

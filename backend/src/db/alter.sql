@@ -12,6 +12,11 @@ CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
 -- Kampanya/koleksiyon opsiyonel: seçilmezse NULL
 ALTER TABLE products ALTER COLUMN section DROP NOT NULL;
 
+-- Ürün isteğe bağlı olarak bir banner'a atanabilir
+ALTER TABLE products ADD COLUMN IF NOT EXISTS banner_id INT REFERENCES banners(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_products_banner ON products(banner_id);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+
 -- Persist uploads in Postgres so redeploys / missing volumes do not lose banner & product images
 CREATE TABLE IF NOT EXISTS uploaded_files (
   filename VARCHAR(255) PRIMARY KEY,
