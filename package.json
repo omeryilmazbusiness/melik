@@ -9,6 +9,7 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "railway:build": "npm install --prefix backend && npm install --prefix frontend && NEXT_PUBLIC_API_URL=/api npm run build --prefix frontend",
     "railway:start": "npm run db:migrate --prefix backend && node scripts/railway-start.mjs",
+    "self-test": "node scripts/self-test-prod.mjs",
     "db:setup": "npm run db:setup --prefix backend",
     "db:seed": "npm run db:seed --prefix backend",
     "db:migrate": "npm run db:migrate --prefix backend",

@@ -6,7 +6,7 @@ const router = Router();
 const VALID_SECTIONS = ['yeni_sezon', 'firsat_urunler', 'tek_fiyat'];
 
 function buildProductQuery(filters) {
-  const conditions = ['p.in_stock = TRUE'];
+  const conditions = ['p.in_stock = TRUE', 'p.is_active = TRUE'];
   const params = [];
   let paramIndex = 1;
 
@@ -118,7 +118,7 @@ router.get('/sections', async (req, res, next) => {
             p.age_range, p.color, c.name as category_name, c.slug as category_slug
           FROM products p
           LEFT JOIN categories c ON p.category_id = c.id
-          WHERE p.section = $1 AND p.in_stock = TRUE
+          WHERE p.section = $1 AND p.in_stock = TRUE AND p.is_active = TRUE
           ORDER BY p.is_featured DESC, p.rating DESC
           LIMIT 12`,
           [section.key]
@@ -136,7 +136,7 @@ router.get('/sections', async (req, res, next) => {
 router.get('/:slug/related', async (req, res, next) => {
   try {
     const { rows: productRows } = await pool.query(
-      'SELECT section, category_id FROM products WHERE slug = $1',
+      'SELECT section, category_id FROM products WHERE slug = $1 AND is_active = TRUE',
       [req.params.slug]
     );
 
@@ -153,6 +153,7 @@ router.get('/:slug/related', async (req, res, next) => {
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       WHERE p.in_stock = TRUE
+        AND p.is_active = TRUE
         AND p.slug != $1
         AND (p.section = $2 OR p.category_id = $3)
       ORDER BY
@@ -175,7 +176,7 @@ router.get('/:slug', async (req, res, next) => {
         p.*, c.name as category_name, c.slug as category_slug
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.slug = $1`,
+      WHERE p.slug = $1 AND p.is_active = TRUE`,
       [req.params.slug]
     );
 

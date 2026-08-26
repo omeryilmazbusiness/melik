@@ -13,7 +13,7 @@ router.get('/', async (req, res, next) => {
       });
     }
 
-    const conditions = ['p.in_stock = TRUE'];
+    const conditions = ['p.in_stock = TRUE', 'p.is_active = TRUE'];
     const params = [];
     let paramIndex = 1;
 
@@ -90,7 +90,7 @@ router.get('/suggestions', async (req, res, next) => {
       `SELECT DISTINCT p.name, p.slug, p.image_url, p.price, c.name as category_name
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
-       WHERE p.in_stock = TRUE AND (
+       WHERE p.in_stock = TRUE AND p.is_active = TRUE AND (
          p.name ILIKE $1 OR c.name ILIKE $1 OR p.color ILIKE $1
        )
        ORDER BY p.name ASC

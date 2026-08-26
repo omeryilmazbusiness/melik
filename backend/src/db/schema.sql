@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS products (
   features JSONB DEFAULT '[]',
   detail TEXT,
   in_stock BOOLEAN DEFAULT TRUE,
+  is_active BOOLEAN DEFAULT TRUE,
   is_featured BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -51,6 +52,15 @@ CREATE INDEX IF NOT EXISTS idx_products_section ON products(section);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_name_trgm ON products USING gin (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);
+
+-- Uploaded images (banner/product) — survives container redeploys
+CREATE TABLE IF NOT EXISTS uploaded_files (
+  filename VARCHAR(255) PRIMARY KEY,
+  mime_type VARCHAR(100) NOT NULL,
+  data BYTEA NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- Banners
 CREATE TABLE IF NOT EXISTS banners (

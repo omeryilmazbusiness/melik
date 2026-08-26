@@ -23,8 +23,11 @@ Repo zaten eklendiyse Settings:
 
 **Networking → Generate Domain** (ör. `sirin-kids-production.up.railway.app`)
 
-**Volumes → Add Volume**
+**Volumes → Add Volume** (önerilir, performans için)
 - Mount Path: `/data/uploads`
+
+> Banner/ürün görselleri Postgres `uploaded_files` tablosuna da kaydedilir.
+> Volume olmasa bile redeploy sonrası görseller DB’den geri servis edilir.
 
 ### 4) Environment Variables
 

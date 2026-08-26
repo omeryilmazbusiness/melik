@@ -47,7 +47,7 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit & { cache?: R
 async function fetchApiServer<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${resolveApiBase()}${endpoint}`, {
     headers: { 'Content-Type': 'application/json' },
-    next: { revalidate: 60 },
+    cache: 'no-store',
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 

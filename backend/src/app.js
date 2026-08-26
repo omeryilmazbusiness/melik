@@ -10,7 +10,7 @@ import bannersRouter from './routes/banners.js';
 import campaignsRouter from './routes/campaigns.js';
 import promoTilesRouter from './routes/promoTiles.js';
 import adminRouter from './routes/admin/index.js';
-import { getUploadDir } from './utils/uploads.js';
+import { getUploadedFile } from './utils/uploads.js';
 
 dotenv.config();
 
@@ -44,7 +44,18 @@ export function createApp() {
     express.json({ limit: '10mb' })(req, res, next);
   });
 
-  app.use('/uploads', express.static(getUploadDir()));
+  // Disk cache + Postgres fallback (survives redeploy without volume)
+  app.get('/uploads/:filename', async (req, res, next) => {
+    try {
+      const file = await getUploadedFile(req.params.filename);
+      if (!file) return res.status(404).json({ error: 'Dosya bulunamadı' });
+      res.setHeader('Content-Type', file.mime_type);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.send(file.data);
+    } catch (err) {
+      next(err);
+    }
+  });
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

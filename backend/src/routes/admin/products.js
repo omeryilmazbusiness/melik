@@ -11,7 +11,7 @@ router.get('/sections', (_req, res) => {
 router.get('/', async (req, res, next) => {
   try {
     const { section, category, q, limit = '50', offset = '0' } = req.query;
-    const conditions = ['1=1'];
+    const conditions = ['p.is_active = TRUE'];
     const params = [];
     let idx = 1;
 
@@ -188,7 +188,12 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    const { rowCount } = await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]);
+    const { rowCount } = await pool.query(
+      `UPDATE products
+       SET is_active = FALSE, updated_at = NOW()
+       WHERE id = $1 AND is_active = TRUE`,
+      [req.params.id]
+    );
     if (!rowCount) return res.status(404).json({ error: 'Ürün bulunamadı' });
     res.json({ data: { success: true } });
   } catch (err) {
