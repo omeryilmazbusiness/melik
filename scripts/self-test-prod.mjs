@@ -38,6 +38,7 @@ async function json(url) {
 try {
   // Ensure schema columns/tables exist
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
+  await pool.query(`ALTER TABLE products ALTER COLUMN section DROP NOT NULL`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS uploaded_files (
       filename VARCHAR(255) PRIMARY KEY,
@@ -122,6 +123,113 @@ try {
   fs.unlinkSync(diskPath);
   await pool.query('DELETE FROM uploaded_files WHERE filename = $1', [filename]);
   console.log('✓ Upload persistence: survives disk wipe (redeploy simulation)');
+
+  // Optional campaign/section: empty → no campaign; selected → appears in that section
+  const { parseOptionalSection } = await import(
+    pathToFileURL(path.join(backendDir, 'src/utils/helpers.js')).href
+  );
+  assert(parseOptionalSection(null).value === null, 'null section → kampanya yok');
+  assert(parseOptionalSection('').value === null, 'empty section → kampanya yok');
+  assert(parseOptionalSection('yeni_sezon').value === 'yeni_sezon', 'yeni_sezon geçerli');
+  assert(!parseOptionalSection('invalid').ok, 'geçersiz section reddedilmeli');
+
+  const slug = `selftest-kampanya-${Date.now()}`;
+  const { rows: catRows } = await pool.query(`SELECT id FROM categories ORDER BY id LIMIT 1`);
+  assert(catRows.length > 0, 'Kategori gerekli');
+
+  const { rows: inserted } = await pool.query(
+    `INSERT INTO products (name, slug, price, section, category_id, image_url, is_active, in_stock)
+     VALUES ($1, $2, 199, NULL, $3, 'https://picsum.photos/seed/selftest/100/100', TRUE, TRUE)
+     RETURNING id`,
+    [`Selftest Kampanyasız ${Date.now()}`, slug, catRows[0].id]
+  );
+  const noCampaignId = inserted[0].id;
+
+  let sec = await json(`${base}/api/products/sections`);
+  assert(
+    !sec.body.data.flatMap((s) => s.products).some((p) => p.id === noCampaignId),
+    'Kampanyasız ürün sections içinde olmamalı'
+  );
+
+  const detailOk = await json(`${base}/api/products/${slug}`);
+  assert(detailOk.status === 200, 'Kampanyasız ürün detayda görünmeli');
+  assert(detailOk.body.data.section === null, 'Detay section null olmalı');
+
+  await pool.query(`UPDATE products SET section = 'firsat_urunler' WHERE id = $1`, [noCampaignId]);
+  sec = await json(`${base}/api/products/sections`);
+  const firsat = sec.body.data.find((s) => s.key === 'firsat_urunler');
+  assert(
+    firsat?.products.some((p) => p.id === noCampaignId),
+    'Kampanya seçilince ilgili section’da görünmeli'
+  );
+
+  await pool.query(`UPDATE products SET section = NULL WHERE id = $1`, [noCampaignId]);
+  sec = await json(`${base}/api/products/sections`);
+  assert(
+    !sec.body.data.flatMap((s) => s.products).some((p) => p.id === noCampaignId),
+    'Kampanya temizlenince sections’tan çıkmalı'
+  );
+
+  // Admin API: create without section, then assign, then clear
+  const username = process.env.ADMIN_USERNAME || 'admin';
+  const password = process.env.ADMIN_PASSWORD || 'SirinKids2026!';
+  const loginRes = await fetch(`${base}/api/admin/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  const loginBody = await loginRes.json();
+  assert(loginRes.status === 200 && loginBody.data?.token, 'Admin login başarısız');
+  const token = loginBody.data.token;
+
+  const createRes = await fetch(`${base}/api/admin/products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      name: `Admin Kampanyasız ${Date.now()}`,
+      price: 150,
+      section: null,
+      category_id: catRows[0].id,
+      image_url: 'https://picsum.photos/seed/admin-selftest/100/100',
+    }),
+  });
+  const created = await createRes.json();
+  assert(createRes.status === 201, `Admin create status ${createRes.status}: ${JSON.stringify(created)}`);
+  assert(created.data.section === null, 'Admin create section null olmalı');
+  const adminProductId = created.data.id;
+
+  const assignRes = await fetch(`${base}/api/admin/products/${adminProductId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ section: 'tek_fiyat' }),
+  });
+  const assigned = await assignRes.json();
+  assert(assignRes.status === 200, `Admin assign status ${assignRes.status}`);
+  assert(assigned.data.section === 'tek_fiyat', 'Kampanya atanmalı');
+
+  const clearRes = await fetch(`${base}/api/admin/products/${adminProductId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ section: null }),
+  });
+  const cleared = await clearRes.json();
+  assert(clearRes.status === 200, `Admin clear status ${clearRes.status}`);
+  assert(cleared.data.section === null, 'Kampanya kaldırılabilmeli');
+
+  await pool.query(`UPDATE products SET is_active = FALSE WHERE id IN ($1, $2)`, [
+    noCampaignId,
+    adminProductId,
+  ]);
+  console.log('✓ Optional campaign: boş = yok, seçilirse sections’ta');
 
   console.log('\nAll self-tests passed.');
 } catch (err) {

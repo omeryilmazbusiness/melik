@@ -23,7 +23,7 @@ export interface ProductInput {
   detail?: string;
   price: number;
   original_price?: number | null;
-  section: string;
+  section: string | null;
   category_id?: number | null;
   image_url: string;
   images?: string[];

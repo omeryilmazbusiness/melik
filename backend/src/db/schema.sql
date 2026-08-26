@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS products (
   price DECIMAL(10, 2) NOT NULL,
   original_price DECIMAL(10, 2),
   discount_percent INT,
-  section product_section NOT NULL,
+  section product_section,
   category_id INT REFERENCES categories(id) ON DELETE SET NULL,
   image_url VARCHAR(500) NOT NULL,
   images JSONB DEFAULT '[]',

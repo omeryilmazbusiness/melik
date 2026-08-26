@@ -19,6 +19,14 @@ export const PRODUCT_SECTIONS = [
 
 export const VALID_SECTIONS = PRODUCT_SECTIONS.map((s) => s.key);
 
+/** Boş / null → kampanya yok. Geçersiz değer → null dönüş (caller 400 verir). */
+export function parseOptionalSection(section) {
+  if (section === undefined) return { ok: true, unset: true, value: undefined };
+  if (section === null || section === '') return { ok: true, unset: false, value: null };
+  if (!VALID_SECTIONS.includes(section)) return { ok: false, unset: false, value: undefined };
+  return { ok: true, unset: false, value: section };
+}
+
 export function computeDiscountPercent(price, originalPrice) {
   if (!originalPrice || originalPrice <= price) return null;
   return Math.round(((originalPrice - price) / originalPrice) * 100);

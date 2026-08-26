@@ -155,9 +155,12 @@ router.get('/:slug/related', async (req, res, next) => {
       WHERE p.in_stock = TRUE
         AND p.is_active = TRUE
         AND p.slug != $1
-        AND (p.section = $2 OR p.category_id = $3)
+        AND (
+          ($2::text IS NOT NULL AND p.section::text = $2)
+          OR ($3::int IS NOT NULL AND p.category_id = $3)
+        )
       ORDER BY
-        CASE WHEN p.section = $2 THEN 0 ELSE 1 END,
+        CASE WHEN $2::text IS NOT NULL AND p.section::text = $2 THEN 0 ELSE 1 END,
         p.is_featured DESC
       LIMIT 8`,
       [req.params.slug, section, category_id]

@@ -60,7 +60,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
     detail: initial?.detail || initial?.description || '',
     price: initial?.price || 0,
     original_price: initial?.original_price ?? null,
-    section: initial?.section || 'yeni_sezon',
+    section: initial?.section ?? '',
     category_id: initial?.category_id ?? null,
     image_url: initial?.image_url || '',
     images: initial?.images || [],
@@ -143,6 +143,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
 
       await onSubmit({
         ...form,
+        section: form.section || null,
         images,
         color_variants: colorVariants,
         detail: form.detail || form.description,
@@ -202,13 +203,18 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Koleksiyon (Yayın Alanı) *</label>
-            <select value={form.section} onChange={(e) => set('section', e.target.value)} className={INPUT} required>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Kampanya</label>
+            <select
+              value={form.section ?? ''}
+              onChange={(e) => set('section', e.target.value || null)}
+              className={INPUT}
+            >
+              <option value="">Kampanya yok</option>
               {sections.map((s) => (
                 <option key={s.key} value={s.key}>{s.title}</option>
               ))}
             </select>
-            <p className="text-[11px] text-gray-400 mt-1">Ana sayfada hangi bölümde görüneceğini belirler</p>
+            <p className="text-[11px] text-gray-400 mt-1">Boş bırakılırsa ana sayfa kampanya bölümlerinde görünmez</p>
           </div>
         </div>
       </section>

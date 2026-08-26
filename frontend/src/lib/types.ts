@@ -31,7 +31,7 @@ export interface Product {
   price: number;
   original_price: number | null;
   discount_percent: number | null;
-  section: 'yeni_sezon' | 'firsat_urunler' | 'tek_fiyat';
+  section: 'yeni_sezon' | 'firsat_urunler' | 'tek_fiyat' | null;
   image_url: string;
   images?: string[];
   badge: string | null;

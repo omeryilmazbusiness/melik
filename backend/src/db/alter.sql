@@ -9,6 +9,9 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 
 CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
 
+-- Kampanya/koleksiyon opsiyonel: seçilmezse NULL
+ALTER TABLE products ALTER COLUMN section DROP NOT NULL;
+
 -- Persist uploads in Postgres so redeploys / missing volumes do not lose banner & product images
 CREATE TABLE IF NOT EXISTS uploaded_files (
   filename VARCHAR(255) PRIMARY KEY,

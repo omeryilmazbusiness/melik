@@ -66,7 +66,7 @@ export default function ProductsAdminPage() {
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <span className="text-xs bg-orange-50 text-orange-600 px-2 py-1 rounded-lg font-medium">
-                      {SECTION_LABELS[p.section] || p.section}
+                      {p.section ? (SECTION_LABELS[p.section] || p.section) : 'Kampanya yok'}
                     </span>
                   </td>
                   <td className="px-4 py-3 font-semibold text-gray-900">

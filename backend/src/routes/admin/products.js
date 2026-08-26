@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import pool from '../../db/pool.js';
-import { slugify, VALID_SECTIONS, computeDiscountPercent, PRODUCT_SECTIONS } from '../../utils/helpers.js';
+import { slugify, computeDiscountPercent, PRODUCT_SECTIONS, parseOptionalSection } from '../../utils/helpers.js';
 
 const router = Router();
 
@@ -70,10 +70,12 @@ router.post('/', async (req, res, next) => {
     const p = req.body;
     if (!p.name?.trim()) return res.status(400).json({ error: 'Ürün adı gerekli' });
     if (!p.price) return res.status(400).json({ error: 'Fiyat gerekli' });
-    if (!p.section || !VALID_SECTIONS.includes(p.section)) {
-      return res.status(400).json({ error: 'Geçerli bir koleksiyon seçin' });
-    }
     if (!p.image_url?.trim()) return res.status(400).json({ error: 'Görsel gerekli' });
+
+    const sectionParsed = parseOptionalSection(p.section ?? null);
+    if (!sectionParsed.ok) {
+      return res.status(400).json({ error: 'Geçerli bir kampanya seçin veya boş bırakın' });
+    }
 
     const slug = p.slug?.trim() || slugify(p.name);
     const discountPercent = computeDiscountPercent(Number(p.price), p.original_price ? Number(p.original_price) : null);
@@ -94,7 +96,7 @@ router.post('/', async (req, res, next) => {
         Number(p.price),
         p.original_price ? Number(p.original_price) : null,
         discountPercent,
-        p.section,
+        sectionParsed.value,
         p.category_id || null,
         p.image_url,
         JSON.stringify(p.images || [p.image_url]),
@@ -125,6 +127,12 @@ router.put('/:id', async (req, res, next) => {
       ? computeDiscountPercent(Number(p.price), p.original_price ? Number(p.original_price) : null)
       : undefined;
 
+    const hasSection = Object.prototype.hasOwnProperty.call(p, 'section');
+    const sectionParsed = hasSection ? parseOptionalSection(p.section) : { ok: true, value: null };
+    if (!sectionParsed.ok) {
+      return res.status(400).json({ error: 'Geçerli bir kampanya seçin veya boş bırakın' });
+    }
+
     const { rows } = await pool.query(
       `UPDATE products SET
         name = COALESCE($1, name),
@@ -135,22 +143,22 @@ router.put('/:id', async (req, res, next) => {
         price = COALESCE($6, price),
         original_price = $7,
         discount_percent = COALESCE($8, discount_percent),
-        section = COALESCE($9, section),
-        category_id = COALESCE($10, category_id),
-        image_url = COALESCE($11, image_url),
-        images = COALESCE($12, images),
-        badge = $13,
-        age_range = COALESCE($14, age_range),
-        color = COALESCE($15, color),
-        brand = COALESCE($16, brand),
-        model = $17,
-        sizes = COALESCE($18, sizes),
-        color_variants = COALESCE($19, color_variants),
-        features = COALESCE($20, features),
-        in_stock = COALESCE($21, in_stock),
-        is_featured = COALESCE($22, is_featured),
+        section = CASE WHEN $9 THEN $10 ELSE section END,
+        category_id = COALESCE($11, category_id),
+        image_url = COALESCE($12, image_url),
+        images = COALESCE($13, images),
+        badge = $14,
+        age_range = COALESCE($15, age_range),
+        color = COALESCE($16, color),
+        brand = COALESCE($17, brand),
+        model = $18,
+        sizes = COALESCE($19, sizes),
+        color_variants = COALESCE($20, color_variants),
+        features = COALESCE($21, features),
+        in_stock = COALESCE($22, in_stock),
+        is_featured = COALESCE($23, is_featured),
         updated_at = NOW()
-       WHERE id = $23 RETURNING *`,
+       WHERE id = $24 RETURNING *`,
       [
         p.name?.trim(),
         p.slug?.trim() || (p.name ? slugify(p.name) : undefined),
@@ -160,7 +168,8 @@ router.put('/:id', async (req, res, next) => {
         p.price !== undefined ? Number(p.price) : undefined,
         p.original_price !== undefined ? (p.original_price ? Number(p.original_price) : null) : undefined,
         discountPercent,
-        p.section,
+        hasSection,
+        hasSection ? sectionParsed.value : null,
         p.category_id,
         p.image_url,
         p.images ? JSON.stringify(p.images) : undefined,
