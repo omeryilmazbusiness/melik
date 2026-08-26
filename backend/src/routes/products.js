@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool from '../db/pool.js';
+import { normalizeProductRow } from '../utils/mediaUrls.js';
 
 const router = Router();
 
@@ -89,7 +90,7 @@ router.get('/', async (req, res, next) => {
     ]);
 
     res.json({
-      data: dataResult.rows,
+      data: dataResult.rows.map(normalizeProductRow),
       meta: {
         total: parseInt(countResult.rows[0].total, 10),
         limit: limitVal,
@@ -123,7 +124,7 @@ router.get('/sections', async (req, res, next) => {
           LIMIT 12`,
           [section.key]
         );
-        return { ...section, products: rows };
+        return { ...section, products: rows.map(normalizeProductRow) };
       })
     );
 
@@ -166,7 +167,7 @@ router.get('/:slug/related', async (req, res, next) => {
       [req.params.slug, section, category_id]
     );
 
-    res.json({ data: rows });
+    res.json({ data: rows.map(normalizeProductRow) });
   } catch (err) {
     next(err);
   }
@@ -187,7 +188,7 @@ router.get('/:slug', async (req, res, next) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    res.json({ data: rows[0] });
+    res.json({ data: normalizeProductRow(rows[0]) });
   } catch (err) {
     next(err);
   }

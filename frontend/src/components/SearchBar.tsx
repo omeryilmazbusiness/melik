@@ -6,7 +6,7 @@ import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { getSearchSuggestions, searchProducts } from '@/lib/api';
 import type { SearchSuggestion, Product, Category } from '@/lib/types';
 import { formatPriceWithCurrency } from '@/lib/format';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 
 interface SearchBarProps {
   categories: Category[];
@@ -223,7 +223,7 @@ export default function SearchBar({ categories }: SearchBarProps) {
                     className="flex items-center gap-3 px-4 py-3 hover:bg-orange-50/50 transition-colors"
                   >
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                      <Image src={product.image_url} alt={product.name} fill className="object-cover" sizes="48px" />
+                      <AppImage src={product.image_url} alt={product.name} fill className="object-cover" sizes="48px" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
@@ -247,7 +247,7 @@ export default function SearchBar({ categories }: SearchBarProps) {
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-50/50 transition-colors text-left"
               >
                 <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                  <Image src={s.image_url} alt={s.name} fill className="object-cover" sizes="40px" />
+                  <AppImage src={s.image_url} alt={s.name} fill className="object-cover" sizes="40px" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-800 truncate">{s.name}</p>

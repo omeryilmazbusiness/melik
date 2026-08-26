@@ -124,6 +124,27 @@ try {
   await pool.query('DELETE FROM uploaded_files WHERE filename = $1', [filename]);
   console.log('✓ Upload persistence: survives disk wipe (redeploy simulation)');
 
+  // Absolute legacy URL → normalized path; DB is source of truth
+  const { normalizeUploadUrl } = await import(
+    pathToFileURL(path.join(backendDir, 'src/utils/uploads.js')).href
+  );
+  assert(
+    normalizeUploadUrl('https://x.up.railway.app/uploads/a.jpg') === '/uploads/a.jpg',
+    'absolute upload URL normalize edilmeli'
+  );
+  assert(normalizeUploadUrl('/uploads/b.png') === '/uploads/b.png', 'relative path korunmalı');
+
+  const fn2 = `selftest-dbfirst-${Date.now()}.png`;
+  await saveUploadedFile({ filename: fn2, mimeType: 'image/png', buffer: png });
+  fs.unlinkSync(path.join(getUploadDir(), fn2));
+  const again = await getUploadedFile(fn2);
+  assert(again && again.data.equals(png), 'DB-first: disk yokken Postgres’ten okumalı');
+  const absFetch = await fetch(`${base}/uploads/${fn2}`);
+  assert(absFetch.status === 200, 'normalized path Express üzerinden 200 dönmeli');
+  fs.unlinkSync(path.join(getUploadDir(), fn2));
+  await pool.query('DELETE FROM uploaded_files WHERE filename = $1', [fn2]);
+  console.log('✓ Upload URL normalize + DB-first serve');
+
   // Optional campaign/section: empty → no campaign; selected → appears in that section
   const { parseOptionalSection } = await import(
     pathToFileURL(path.join(backendDir, 'src/utils/helpers.js')).href

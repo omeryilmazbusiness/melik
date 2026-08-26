@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import {
   Plus,
   Trash2,
@@ -279,7 +279,7 @@ export default function BannersAdminPage() {
             <div className="flex flex-col sm:flex-row gap-4 items-start">
               <div className="relative w-full sm:w-72 aspect-[3/2] rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                 {form.image_url ? (
-                  <Image
+                  <AppImage
                     src={form.image_url}
                     alt="Banner önizleme"
                     fill
@@ -366,7 +366,7 @@ export default function BannersAdminPage() {
             >
               <div className="relative w-full sm:w-56 aspect-[3/2] sm:aspect-auto sm:h-auto shrink-0 bg-gray-100">
                 {banner.image_url && (
-                  <Image
+                  <AppImage
                     src={banner.image_url}
                     alt={banner.title}
                     fill

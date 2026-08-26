@@ -1,8 +1,6 @@
 import type { NextConfig } from 'next';
 import path from 'path';
 
-const uploadProxyTarget = process.env.API_BASE_URL || 'http://localhost:4000';
-
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   images: {
@@ -15,12 +13,14 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.railway.app' },
     ],
   },
-  // Local next:3000 → proxy /uploads to Express so relative image URLs work
+  // Local `next dev` only — production unified server serves /uploads via Express
   async rewrites() {
+    if (process.env.NODE_ENV === 'production') return [];
+    const target = (process.env.API_BASE_URL || 'http://localhost:4000').replace(/\/$/, '');
     return [
       {
         source: '/uploads/:path*',
-        destination: `${uploadProxyTarget.replace(/\/$/, '')}/uploads/:path*`,
+        destination: `${target}/uploads/:path*`,
       },
     ];
   },

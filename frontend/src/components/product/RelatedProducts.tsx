@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { RelatedProduct } from '@/lib/types';
 import { formatPriceWithCurrency } from '@/lib/format';
@@ -50,7 +50,7 @@ export default function RelatedProducts({ products }: RelatedProductsProps) {
             className="shrink-0 w-44 group"
           >
             <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden mb-2">
-              <Image
+              <AppImage
                 src={product.image_url}
                 alt={product.name}
                 fill

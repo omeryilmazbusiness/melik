@@ -42,8 +42,15 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Şirin Kids (API + Web) running on 0.0.0.0:${PORT}`);
   console.log(`Uploads dir: ${getUploadDir()}`);
   console.log(`API_BASE_URL: ${process.env.API_BASE_URL || '(unset)'}`);
+  try {
+    const { default: pool } = await import(pathToFileURL(path.join(backendDir, 'src/db/pool.js')).href);
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM uploaded_files');
+    console.log(`Persisted uploads in DB: ${rows[0].n}`);
+  } catch (err) {
+    console.warn('Could not count uploaded_files:', err.message);
+  }
 });

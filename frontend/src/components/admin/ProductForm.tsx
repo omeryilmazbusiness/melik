@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import { Plus, Upload, Loader2 } from 'lucide-react';
 import {
   adminGetCategories,
@@ -242,7 +242,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
         <div className="flex flex-col sm:flex-row gap-4 items-start">
           {form.image_url && (
             <div className="relative w-32 h-40 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-              <Image src={form.image_url} alt="Önizleme" fill className="object-cover" sizes="128px" />
+              <AppImage src={form.image_url} alt="Önizleme" fill className="object-cover" sizes="128px" />
             </div>
           )}
           <div className="space-y-2">

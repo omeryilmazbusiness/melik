@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool from '../db/pool.js';
+import { normalizeProductRow } from '../utils/mediaUrls.js';
 
 const router = Router();
 
@@ -66,7 +67,7 @@ router.get('/', async (req, res, next) => {
     const result = await pool.query(query, [...params, limitVal]);
 
     res.json({
-      data: result.rows,
+      data: result.rows.map(normalizeProductRow),
       meta: {
         query: q || null,
         category: category || null,
@@ -98,7 +99,7 @@ router.get('/suggestions', async (req, res, next) => {
       [`%${q}%`]
     );
 
-    res.json({ data: rows });
+    res.json({ data: rows.map(normalizeProductRow) });
   } catch (err) {
     next(err);
   }

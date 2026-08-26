@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import { Minus, Plus, Ruler, TrendingDown, MessageCircle } from 'lucide-react';
 import type { Product, ProductSize, ColorVariant } from '@/lib/types';
 import { formatPriceWithCurrency } from '@/lib/format';
@@ -131,7 +131,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                   i === selectedColor ? 'border-orange-500 shadow-sm' : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <Image src={variant.image_url} alt={variant.name} fill className="object-cover" sizes="56px" />
+                <AppImage src={variant.image_url} alt={variant.name} fill className="object-cover" sizes="56px" />
               </button>
             ))}
           </div>

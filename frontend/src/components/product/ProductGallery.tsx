@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ProductGalleryProps {
@@ -18,7 +18,7 @@ export default function ProductGallery({ images, name }: ProductGalleryProps) {
   return (
     <div className="space-y-4">
       <div className="relative aspect-[3/4] bg-gray-50 rounded-2xl overflow-hidden group">
-        <Image
+        <AppImage
           src={images[activeIndex]}
           alt={name}
           fill

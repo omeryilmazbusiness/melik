@@ -49,9 +49,11 @@ export function createApp() {
     try {
       const file = await getUploadedFile(req.params.filename);
       if (!file) return res.status(404).json({ error: 'Dosya bulunamadı' });
+      const body = Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data);
       res.setHeader('Content-Type', file.mime_type);
+      res.setHeader('Content-Length', String(body.length));
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      res.send(file.data);
+      res.end(body);
     } catch (err) {
       next(err);
     }

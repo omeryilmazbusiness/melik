@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool from '../db/pool.js';
+import { normalizePromoRow } from '../utils/mediaUrls.js';
 
 const router = Router();
 
@@ -8,7 +9,7 @@ router.get('/', async (req, res, next) => {
     const { rows } = await pool.query(
       'SELECT id, title, subtitle, image_url, link FROM promo_tiles ORDER BY sort_order ASC'
     );
-    res.json({ data: rows });
+    res.json({ data: rows.map(normalizePromoRow) });
   } catch (err) {
     next(err);
   }

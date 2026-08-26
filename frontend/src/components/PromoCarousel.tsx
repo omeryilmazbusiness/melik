@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PromoTile } from '@/lib/types';
 
@@ -38,7 +38,7 @@ export default function PromoCarousel({ tiles }: PromoCarouselProps) {
               href={tile.link}
               className="relative shrink-0 w-64 sm:w-72 h-36 rounded-2xl overflow-hidden snap-start group/tile"
             >
-              <Image
+              <AppImage
                 src={tile.image_url}
                 alt={tile.title}
                 fill

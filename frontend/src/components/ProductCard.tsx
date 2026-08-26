@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import { Heart, TrendingDown } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { formatPriceWithCurrency } from '@/lib/format';
@@ -21,7 +21,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     <article className="group relative bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:shadow-gray-100/80 transition-all duration-300">
       <Link href={`/urun/${product.slug}`} className="block">
         <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
-          <Image
+          <AppImage
             src={product.image_url}
             alt={product.name}
             fill

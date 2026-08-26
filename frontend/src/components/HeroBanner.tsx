@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import AppImage from '@/components/AppImage';
 import type { Banner } from '@/lib/types';
 
 interface HeroBannerProps {
@@ -54,7 +54,7 @@ export default function HeroBanner({ banners }: HeroBannerProps) {
           </div>
 
           <div className="relative h-52 sm:h-64 md:h-full md:min-h-[320px]">
-            <Image
+            <AppImage
               src={banner.image_url}
               alt={banner.title}
               fill
