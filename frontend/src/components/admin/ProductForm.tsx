@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AppImage from '@/components/AppImage';
-import { Plus, Upload, Loader2 } from 'lucide-react';
+import { Plus, Upload, Loader2, Trash2 } from 'lucide-react';
 import {
   adminGetCategories,
   adminGetSections,
@@ -12,24 +12,6 @@ import {
 } from '@/lib/admin-api';
 import type { Category, ProductFeature, ProductSize, ColorVariant, Banner } from '@/lib/types';
 import type { ProductSectionOption } from '@/lib/admin-api';
-
-const DEFAULT_SIZES_BABY: ProductSize[] = [
-  { label: '0-3 Ay', in_stock: true },
-  { label: '3-6 Ay', in_stock: true },
-  { label: '6-9 Ay', in_stock: true },
-  { label: '9-12 Ay', in_stock: true },
-  { label: '12-18 Ay', in_stock: true },
-  { label: '18-24 Ay', in_stock: false },
-];
-
-const DEFAULT_SIZES_KIDS: ProductSize[] = [
-  { label: '2-3 Yaş', in_stock: true },
-  { label: '3-4 Yaş', in_stock: true },
-  { label: '4-5 Yaş', in_stock: true },
-  { label: '5-6 Yaş', in_stock: true },
-  { label: '6-7 Yaş', in_stock: false },
-  { label: '7-8 Yaş', in_stock: true },
-];
 
 const INPUT = 'w-full h-11 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400';
 const TEXTAREA = 'w-full px-3 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 resize-none';
@@ -72,7 +54,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
     color: initial?.color || '',
     brand: initial?.brand || 'Şirin Kids',
     model: initial?.model || '',
-    sizes: initial?.sizes || DEFAULT_SIZES_KIDS,
+    sizes: initial?.sizes || [],
     color_variants: initial?.color_variants || [],
     features: initial?.features || DEFAULT_FEATURES,
     in_stock: initial?.in_stock !== false,
@@ -112,17 +94,21 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
     }
   };
 
-  const handleCategoryChange = (categoryId: number) => {
-    set('category_id', categoryId);
-    const cat = categories.find((c) => c.id === categoryId);
-    if (cat?.slug === 'bebek') set('sizes', DEFAULT_SIZES_BABY);
-    else set('sizes', DEFAULT_SIZES_KIDS);
-  };
-
   const updateSize = (index: number, field: keyof ProductSize, value: string | boolean) => {
     const sizes = [...(form.sizes || [])];
     sizes[index] = { ...sizes[index], [field]: value };
     set('sizes', sizes);
+  };
+
+  const addAgeRange = () => {
+    set('sizes', [...(form.sizes || []), { label: '', in_stock: true }]);
+  };
+
+  const removeAgeRange = (index: number) => {
+    set(
+      'sizes',
+      (form.sizes || []).filter((_, i) => i !== index)
+    );
   };
 
   const updateFeature = (index: number, field: keyof ProductFeature, value: string) => {
@@ -147,12 +133,23 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
           ? [{ name: form.color, image_url: form.image_url }]
           : [];
 
+      const sizes = (form.sizes || [])
+        .map((s) => ({ ...s, label: s.label.trim() }))
+        .filter((s) => s.label.length > 0);
+
+      const ageRange =
+        sizes.length > 0
+          ? sizes.map((s) => s.label).join(', ')
+          : form.age_range || '';
+
       await onSubmit({
         ...form,
         section: form.section || null,
         banner_id: form.banner_id || null,
         images,
         color_variants: colorVariants,
+        sizes,
+        age_range: ageRange,
         detail: form.detail || form.description,
         description: form.description || form.detail,
       });
@@ -199,7 +196,7 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
             <label className="text-xs font-medium text-gray-500 mb-1 block">Kategori *</label>
             <select
               value={form.category_id ?? ''}
-              onChange={(e) => handleCategoryChange(Number(e.target.value))}
+              onChange={(e) => set('category_id', Number(e.target.value))}
               className={INPUT}
               required
             >
@@ -281,27 +278,53 @@ export default function ProductForm({ initial, onSubmit, submitLabel = 'Kaydet' 
 
       <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
         <h2 className="font-semibold text-gray-900">Varyantlar</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Renk</label>
-            <input value={form.color} onChange={(e) => set('color', e.target.value)} className={INPUT} placeholder="Yeşil, Pembe..." />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Yaş Aralığı</label>
-            <input value={form.age_range} onChange={(e) => set('age_range', e.target.value)} className={INPUT} placeholder="6-18 Ay" />
-          </div>
+        <div>
+          <label className="text-xs font-medium text-gray-500 mb-1 block">Renk</label>
+          <input value={form.color} onChange={(e) => set('color', e.target.value)} className={INPUT} placeholder="Yeşil, Pembe..." />
         </div>
 
         <div>
-          <label className="text-xs font-medium text-gray-500 mb-2 block">Bedenler</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-medium text-gray-500 block">Yaş Aralıkları</label>
+            <button
+              type="button"
+              onClick={addAgeRange}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-orange-500 hover:text-orange-600 transition-colors"
+            >
+              <Plus size={16} />
+              Yaş Aralığı Ekle
+            </button>
+          </div>
           <div className="space-y-2">
+            {(form.sizes || []).length === 0 && (
+              <p className="text-xs text-gray-400 py-2">
+                Henüz yaş aralığı yok. İstediğiniz kadar ekleyebilirsiniz (örn. 0-3 Ay, 2-3 Yaş).
+              </p>
+            )}
             {(form.sizes || []).map((size, i) => (
               <div key={i} className="flex items-center gap-2">
-                <input value={size.label} onChange={(e) => updateSize(i, 'label', e.target.value)} className="input flex-1" />
+                <input
+                  value={size.label}
+                  onChange={(e) => updateSize(i, 'label', e.target.value)}
+                  className={`${INPUT} flex-1`}
+                  placeholder="Örn: 0-3 Ay, 4-5 Yaş..."
+                />
                 <label className="flex items-center gap-1.5 text-xs text-gray-500 shrink-0">
-                  <input type="checkbox" checked={size.in_stock} onChange={(e) => updateSize(i, 'in_stock', e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={size.in_stock}
+                    onChange={(e) => updateSize(i, 'in_stock', e.target.checked)}
+                  />
                   Stokta
                 </label>
+                <button
+                  type="button"
+                  onClick={() => removeAgeRange(i)}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Sil"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             ))}
           </div>

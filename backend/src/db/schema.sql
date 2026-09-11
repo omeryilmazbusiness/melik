@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS products (
   rating DECIMAL(2, 1) DEFAULT 5.0,
   review_count INT DEFAULT 0,
   badge VARCHAR(50),
-  age_range VARCHAR(50),
+  age_range TEXT,
   color VARCHAR(50),
   subtitle VARCHAR(255),
   brand VARCHAR(100) DEFAULT 'Şirin Kids',

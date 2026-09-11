@@ -1,3 +1,6 @@
+-- Yaş aralığı serbest metin; birden fazla aralık birleşince sınır olmasın
+ALTER TABLE products ALTER COLUMN age_range TYPE TEXT;
+
 ALTER TABLE products ADD COLUMN IF NOT EXISTS subtitle VARCHAR(255);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(100) DEFAULT 'Şirin Kids';
 ALTER TABLE products ADD COLUMN IF NOT EXISTS model VARCHAR(100);
